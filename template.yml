@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion : "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: A SAM template for deploying Lambda functions.
+Parameters:
+  FunctionName:
+    Type: String
+  Region:
+    Type: String
+  SearchHost:
+    Type: String
+  KitsIndex:
+    Type: String
+  Environment:
+    Type: String
+  Application:
+    Type: String
+Resources:
+  UserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      CodeUri: ./
+      Runtime: python3.9
+      Handler: lambda_function.lambda_handler
+      Environment:
+        Variables:
+          AWS_REGION: !Ref Region
+          OPENSEARCH_HOST: !Ref SearchHost
+          KITS_INDEX: !Ref KitsIndex
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - es:ESHttpPost
+                - es:ESHttpPut
+                - dynamodb:DescribeStream
+                - dynamodb:GetRecords
+                - dynamodb:GetShardIterator
+                - dynamodb:ListStreams
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: "*" 
+      Tags:
+        environment: !Ref Environment
+        application: !Ref Application
+
+  UserFunctionPermissions:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt UserFunction.Arn
+      Principal: appsync.amazonaws.com
